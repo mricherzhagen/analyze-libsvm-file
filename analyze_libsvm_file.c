@@ -28,8 +28,8 @@ int main(int argc, char *argv[]) {
 	count_t *classlabels_cnt = calloc(sizeof(count_t),max_classlabels);
 
 	count_t *features_cnt = calloc(sizeof(count_t),max_features);
-	double *feature_sum = calloc(sizeof(double),max_features);
-	double *feature_sum2 = calloc(sizeof(double),max_features);
+	double *feature_mean = calloc(sizeof(double),max_features);
+	double *feature_m2 = calloc(sizeof(double),max_features);
 	float *feature_min = calloc(sizeof(float),max_features);
 	float *feature_max = calloc(sizeof(float),max_features);
 	count_t nsamples = 0;
@@ -84,23 +84,26 @@ int main(int argc, char *argv[]) {
 			if (feature_nr >= max_features) {
 				size_t new_size = feature_nr*2 ;
 				features_cnt = realloc(features_cnt, new_size*sizeof(count_t));
-				feature_sum = realloc(feature_sum, new_size*sizeof(double));
-				feature_sum2 = realloc(feature_sum2, new_size*sizeof(double));
+				feature_mean = realloc(feature_mean, new_size*sizeof(double));
+				feature_m2 = realloc(feature_m2, new_size*sizeof(double));
 				feature_min = realloc(feature_min, new_size*sizeof(float));
 				feature_max = realloc(feature_max, new_size*sizeof(float));
 				for (i=max_features; i < new_size;i++) {
 					features_cnt[i] = 0;
-					feature_sum[i] = 0;
-					feature_sum2[i] = 0;
+					feature_mean[i] = 0;
+					feature_m2[i] = 0;
 					feature_min[i] = INFINITY;
 					feature_max[i] = -INFINITY;
 				}
 				max_features=new_size;
 			}
 			if (feature_nr > used_features) used_features = feature_nr;
+			//Online Algorithm for Variance & Mean. Src: http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Incremental_algorithm
+			//n=features_cnt[feature_nr], mean=feature_mean[feature_nr], M2 = feature_m2[feature_nr] 
 			features_cnt[feature_nr] += 1;
-			feature_sum[feature_nr] += feature_value;
-			feature_sum2[feature_nr] += feature_value*feature_value;
+			double delta = feature_value - feature_mean[feature_nr];
+			feature_mean[feature_nr] += delta/features_cnt[feature_nr];
+			feature_m2[feature_nr] += delta*(feature_value - feature_mean[feature_nr]);
 			if (feature_value > feature_max[feature_nr]) feature_max[feature_nr] = feature_value;
 			if (feature_value < feature_min[feature_nr]) feature_min[feature_nr] = feature_value;
 		}
@@ -136,18 +139,17 @@ int main(int argc, char *argv[]) {
 	double variancesum = 0;
 	for (i=1; i <= used_features;i++) {
 
-		double feature_mean = feature_sum[i]/features_cnt[i];
 		minsum += feature_min[i];
 		maxsum += feature_max[i];
-		meansum += feature_mean;
-		double feature_variance = (feature_sum2[i]/features_cnt[i]) - feature_mean*feature_mean;
+		meansum += feature_mean[i];
+		double feature_variance = feature_m2[i]/(features_cnt[i] - 1);
 		variancesum += feature_variance;
 		printf("%5d %7.3f%% %*d ", i, features_cnt[i]*100.0/nsamples, countlen, features_cnt[i]);
 		if (nsamples - features_cnt[i] != 0)
 			printf("%*d ",  countlen, nsamples - features_cnt[i]);
 		else
 			printf("%*s ", countlen, "" );
-		printf("%10f %10f %10f %10f\n", feature_min[i], feature_mean , feature_max[i], feature_variance);
+		printf("%10f %10f %10f %10f\n", feature_min[i], feature_mean[i], feature_max[i], feature_variance);
 	}
 	printf("\n%5s %7.3f%% %*d %*ld","ALL",100.0*features_total/(used_features*nsamples),countlen,features_total,countlen,nsamples*used_features-features_total);
 	printf(" %10f %10f %10f %10f\n", minsum/used_features, meansum/used_features, maxsum/used_features,variancesum/used_features);
