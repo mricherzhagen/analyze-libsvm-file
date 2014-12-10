@@ -130,16 +130,26 @@ int main(int argc, char *argv[]) {
 	printf("Features:\n");
 	countlen = countlen < 7 ? 7 : countlen;
 	printf("%5s %8s %*s %*s %10s %10s %10s %10s\n", "#", "Count%", countlen, "Count", countlen, "n-count", "Min", "Mean", "Max", "Variance");
-	for (i=1; i < used_features;i++) {
+	double minsum = 0;
+	double maxsum = 0;
+	double meansum = 0;
+	double variancesum = 0;
+	for (i=1; i <= used_features;i++) {
 
 		double feature_mean = feature_sum[i]/features_cnt[i];
+		minsum += feature_min[i];
+		maxsum += feature_max[i];
+		meansum += feature_mean;
+		double feature_variance = (feature_sum2[i]/features_cnt[i]) - feature_mean*feature_mean;
+		variancesum += feature_variance;
 		printf("%5d %7.3f%% %*d ", i, features_cnt[i]*100.0/nsamples, countlen, features_cnt[i]);
 		if (nsamples - features_cnt[i] != 0)
 			printf("%*d ",  countlen, nsamples - features_cnt[i]);
 		else
 			printf("%*s ", countlen, "" );
-		printf("%10f %10f %10f %10f\n", feature_min[i], feature_mean , feature_max[i], (feature_sum2[i]/features_cnt[i]) - feature_mean*feature_mean);
+		printf("%10f %10f %10f %10f\n", feature_min[i], feature_mean , feature_max[i], feature_variance);
 	}
-	printf("\n%5s %7.3f%% %*d %*ld\n","ALL",100.0*features_total/(used_features*nsamples),countlen,features_total,countlen,nsamples*used_features-features_total);
+	printf("\n%5s %7.3f%% %*d %*ld","ALL",100.0*features_total/(used_features*nsamples),countlen,features_total,countlen,nsamples*used_features-features_total);
+	printf(" %10f %10f %10f %10f\n", minsum/used_features, meansum/used_features, maxsum/used_features,variancesum/used_features);
 	return 0;
 }
