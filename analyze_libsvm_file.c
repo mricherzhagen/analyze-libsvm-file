@@ -28,6 +28,10 @@ int main(int argc, char *argv[]) {
 	count_t *classlabels_cnt = calloc(sizeof(count_t),max_classlabels);
 
 	count_t *features_cnt = calloc(sizeof(count_t),max_features);
+	double *feature_sum = calloc(sizeof(double),max_features);
+	double *feature_sum2 = calloc(sizeof(double),max_features);
+	float *feature_min = calloc(sizeof(float),max_features);
+	float *feature_max = calloc(sizeof(float),max_features);
 	count_t nsamples = 0;
 
 	int i;
@@ -80,13 +84,25 @@ int main(int argc, char *argv[]) {
 			if (feature_nr >= max_features) {
 				size_t new_size = feature_nr*2 ;
 				features_cnt = realloc(features_cnt, new_size*sizeof(count_t));
+				feature_sum = realloc(feature_sum, new_size*sizeof(double));
+				feature_sum2 = realloc(feature_sum2, new_size*sizeof(double));
+				feature_min = realloc(feature_min, new_size*sizeof(float));
+				feature_max = realloc(feature_max, new_size*sizeof(float));
 				for (i=max_features; i < new_size;i++) {
 					features_cnt[i] = 0;
+					feature_sum[i] = 0;
+					feature_sum2[i] = 0;
+					feature_min[i] = INFINITY;
+					feature_max[i] = -INFINITY;
 				}
 				max_features=new_size;
 			}
 			if (feature_nr > used_features) used_features = feature_nr;
-				features_cnt[feature_nr] += 1;
+			features_cnt[feature_nr] += 1;
+			feature_sum[feature_nr] += feature_value;
+			feature_sum2[feature_nr] += feature_value*feature_value;
+			if (feature_value > feature_max[feature_nr]) feature_max[feature_nr] = feature_value;
+			if (feature_value < feature_min[feature_nr]) feature_min[feature_nr] = feature_value;
 		}
 //		printf(".");
 	}
@@ -112,13 +128,17 @@ int main(int argc, char *argv[]) {
 		printf("%5.1f %7.3f%% %*d\n", classlabels[i], classlabels_cnt[i]*100.0/nsamples,countlen,classlabels_cnt[i]);
 	}
 	printf("Features:\n");
-
+	countlen = countlen < 7 ? 7 : countlen;
+	printf("%5s %8s %*s %*s %10s %10s %10s %10s\n", "#", "Count%", countlen, "Count", countlen, "n-count", "Min", "Mean", "Max", "Variance");
 	for (i=1; i < used_features;i++) {
 
+		double feature_mean = feature_sum[i]/features_cnt[i];
+		printf("%5d %7.3f%% %*d ", i, features_cnt[i]*100.0/nsamples, countlen, features_cnt[i]);
 		if (nsamples - features_cnt[i] != 0)
-			printf("%5d %7.3f%% %*d %*d\n", i, features_cnt[i]*100.0/nsamples, countlen, features_cnt[i], countlen, nsamples - features_cnt[i]);
+			printf("%*d ",  countlen, nsamples - features_cnt[i]);
 		else
-			printf("%5d %7.3f%% %*d\n", i, features_cnt[i]*100.0/nsamples, countlen, features_cnt[i]);
+			printf("%*s ", countlen, "" );
+		printf("%10f %10f %10f %10f\n", feature_min[i], feature_mean , feature_max[i], (feature_sum2[i]/features_cnt[i]) - feature_mean*feature_mean);
 	}
 	printf("\n%5s %7.3f%% %*d %*ld\n","ALL",100.0*features_total/(used_features*nsamples),countlen,features_total,countlen,nsamples*used_features-features_total);
 	return 0;
