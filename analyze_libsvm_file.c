@@ -2,6 +2,7 @@
 #include<stdlib.h>
 #include<ctype.h>
 #include<math.h>
+#include<locale.h>
 
 typedef unsigned int count_t;
 
@@ -153,5 +154,13 @@ int main(int argc, char *argv[]) {
 	}
 	printf("\n%5s %7.3f%% %*d %*ld","ALL",100.0*features_total/(used_features*nsamples),countlen,features_total,countlen,nsamples*used_features-features_total);
 	printf(" %10f %10f %10f %10f\n", minsum/used_features, meansum/used_features, maxsum/used_features,variancesum/used_features);
+
+	if (used_classlabels >= 2) {
+		count_t biggest_classifier_count = classlabels_cnt[class_idx[used_classlabels - 1]] + classlabels_cnt[class_idx[used_classlabels - 2]];
+		size_t bytes = biggest_classifier_count*biggest_classifier_count*sizeof(double);
+		setlocale(LC_ALL,"");
+		printf("\nFull Kernel Matrix Size: %'dx%'d doubles =  %'d Bytes = %'.2f KByte = %'.2f MByte\n", biggest_classifier_count, biggest_classifier_count, bytes, bytes/1024.0, bytes/1024.0/1024.0);
+	}
+
 	return 0;
 }
