@@ -125,13 +125,13 @@ int main(int argc, char *argv[]) {
 	qsort(class_idx,used_classlabels,sizeof(int),compare);
 
 
-	printf("Classes: \n");
+	printf("%lu Classes: \n", used_classlabels);
 	int j;
 	for (j = 0; j < used_classlabels;j++) {
 		i=class_idx[j];
 		printf("%5.1f %7.3f%% %*d\n", classlabels[i], classlabels_cnt[i]*100.0/nsamples,countlen,classlabels_cnt[i]);
 	}
-	printf("Features:\n");
+	printf("%lu Features:\n", used_features);
 	countlen = countlen < 7 ? 7 : countlen;
 	printf("%5s %8s %*s %*s %10s %10s %10s %10s\n", "#", "Count%", countlen, "Count", countlen, "n-count", "Min", "Mean", "Max", "Variance");
 	double minsum = 0;
